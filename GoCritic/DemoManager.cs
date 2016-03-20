@@ -80,7 +80,6 @@ namespace GoCritic
                 Console.ForegroundColor = originalColor;
 				Console.WriteLine(")");
 				Console.WriteLine($"Rating: {map.Rating:F3}");
-                // Console.WriteLine($"Round averages: {map.KillsPerRound:F2} kills, {map.DeathsPerRound:F2} deaths");
             }
 		}
 
@@ -118,13 +117,18 @@ namespace GoCritic
 		{
 			long steamID = GetSteamID();
 			var mapStats = new List<MapStats>();
+			var allMaps = new MapStats("[All maps]");
 			foreach (var match in _Matches)
+			{
 				ProcessMatch(match, steamID, steamIDs, mapStats);
+				ProcessMatch(match, steamID, steamIDs, mapStats, allMaps);
+			}
 			mapStats = mapStats.OrderByDescending(m => m.Games).ToList();
+			mapStats.Add(allMaps);
 			return mapStats;
 		}
 
-		private void ProcessMatch(Match match, long steamID, List<long> steamIDs, List<MapStats> mapStats)
+		private void ProcessMatch(Match match, long steamID, List<long> steamIDs, List<MapStats> mapStats, MapStats statsOverride = null)
 		{
 			if (match.Teams.Count != 2)
 				return;
@@ -140,7 +144,7 @@ namespace GoCritic
 			var teamHashSet = new HashSet<long>(playerTeam.Players.Select(p => p.SteamID));
 			if (!premadeHashSet.IsSubsetOf(teamHashSet))
 				return;
-			var stats = mapStats.FirstOrDefault(s => s.Map == match.Map);
+			var stats = statsOverride ?? mapStats.FirstOrDefault(s => s.Map == match.Map);
 			if (stats == null)
 			{
 				stats = new MapStats(match.Map);
