@@ -44,16 +44,15 @@ namespace GoCritic
 			var directory = new DirectoryInfo(demoPath);
 			var files = directory.GetFiles("*.dem");
 			int count = 0;
-			foreach (var file in files)
+			var matchingFiles = files.Where(file => !_Matches.Any(m => m.DemoName == file.Name)).ToList();
+			foreach (var file in matchingFiles)
 			{
-				if (_Matches.Any(m => m.DemoName == file.Name))
-					continue;
-				Console.WriteLine($"Parsing demo {file.Name}");
+				count++;
+				Console.WriteLine($"Parsing demo {file.Name} ({count}/{matchingFiles.Count})");
 				var parser = new DemoParser();
 				var match = parser.Parse(file);
 				_Matches.Add(match);
 				SaveCache();
-				count++;
 			}
             stopwatch.Stop();
 			if (count > 0)

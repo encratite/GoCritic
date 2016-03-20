@@ -51,7 +51,11 @@ namespace GoCritic
 			var player = arguments.Swapped;
 			if (player == null)
 				return;
-			AddPlayer(player, arguments.NewTeam);
+			var stats = GetPlayerStats(player);
+			var oldTeam = GetTeam(arguments.OldTeam);
+			oldTeam.Players.Remove(stats);
+			var newTeam = GetTeam(arguments.NewTeam);
+			newTeam.Players.Add(stats);
 		}
 
 		private void OnRoundEnd(object sender, RoundEndedEventArgs arguments)
@@ -60,7 +64,6 @@ namespace GoCritic
 				return;
 			var team = GetTeam(arguments.Winner);
 			team.Score++;
-			// Console.WriteLine($"{arguments.Message} ({arguments.Reason}): {team.Score}");
 		}
 
 		#endregion
@@ -87,8 +90,6 @@ namespace GoCritic
 
 		private PlayerMatchStats AddPlayer(Player player, DemoInfo.Team teamEnum)
 		{
-			foreach (var currentTeam in _Match.Teams)
-				currentTeam.Players = currentTeam.Players.Where(p => p.SteamId != player.SteamID).ToList();
 			var team = GetTeam(teamEnum);
 			var stats = new PlayerMatchStats(player);
 			team.Players.Add(stats);
