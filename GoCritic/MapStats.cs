@@ -2,7 +2,11 @@
 {
 	class MapStats
 	{
-		public string Name { get; private set; }
+		private const decimal AverageKPR = 0.679M;
+		private const decimal AverageSPR = 0.317M;
+		private const decimal AverageRMK = 1.277M;
+
+		public string Map { get; private set; }
 
 		public int Wins { get; set; } = 0;
 		public int Losses { get; set; } = 0;
@@ -14,23 +18,36 @@
 		public int Kills { get; set; } = 0;
 		public int Deaths { get; set; } = 0;
 
+		public int[] MultiKills { get; set; } = new int[PlayerStats.PlayersPerTeam];
+
 		public int Games { get { return Wins + Losses + Draws; } }
 
 		public int Rounds { get { return RoundsWon + RoundsLost; } }
 
-		public decimal? KillsPerRound { get { return GetRatio(Kills, Rounds); } }
-		public decimal? DeathsPerRound { get { return GetRatio(Deaths, Rounds); } }
+		public decimal? KillsPerRound { get { return (decimal)Kills / Rounds; } }
+		public decimal? DeathsPerRound { get { return (decimal)Deaths / Rounds; } }
+
+		public decimal KillRating { get { return (decimal)Kills / Rounds / AverageKPR; } }
+		public decimal SurvivalRating { get { return (decimal)(Rounds - Deaths) / Rounds / AverageSPR; } }
+		public decimal RoundsWithMultipleKillsRating
+		{
+			get
+			{
+				int numerator = MultiKills[0] + 4 * MultiKills[1] + 9 * MultiKills[2] + 16 * MultiKills[3] + 25 * MultiKills[4];
+				return numerator / Rounds / AverageRMK;
+			}
+		}
+
+		public decimal Rating { get { return (KillRating + 0.7M * SurvivalRating + RoundsWithMultipleKillsRating) / 2.7M; } }
 
 		public MapStats(string name)
 		{
-			Name = name;
+			Map = name;
 		}
 
-		private decimal? GetRatio(int numerator, int denominator)
+		public override string ToString()
 		{
-			if (denominator == 0)
-				return null;
-			return (decimal)numerator / denominator;
+			return Map;
 		}
 	}
 }

@@ -66,7 +66,7 @@ namespace GoCritic
 			{
 				var originalColor = Console.ForegroundColor;
 				Console.ForegroundColor = ConsoleColor.White;
-				Console.WriteLine(map.Name);
+				Console.WriteLine(map.Map);
 				Console.ForegroundColor = originalColor;
 				Console.Write($"W/D/L: {map.Wins}/{map.Draws}/{map.Losses} (");
 				int difference = map.Wins - map.Losses;
@@ -79,7 +79,8 @@ namespace GoCritic
 				Console.Write(difference.ToString("+#;-#;0"));
                 Console.ForegroundColor = originalColor;
 				Console.WriteLine(")");
-				Console.WriteLine($"Round averages: {map.KillsPerRound:F2} kills, {map.DeathsPerRound:F2} deaths");
+				Console.WriteLine($"Rating: {map.Rating:F3}");
+                // Console.WriteLine($"Round averages: {map.KillsPerRound:F2} kills, {map.DeathsPerRound:F2} deaths");
             }
 		}
 
@@ -124,7 +125,7 @@ namespace GoCritic
 				var player = match.Teams.SelectMany(t => t.Players).FirstOrDefault(p => p.SteamId == steamId);
 				if (player == null)
 					continue;
-				var stats = mapStats.FirstOrDefault(s => s.Name == match.Map);
+				var stats = mapStats.FirstOrDefault(s => s.Map == match.Map);
 				if (stats == null)
 				{
 					stats = new MapStats(match.Map);
@@ -144,6 +145,8 @@ namespace GoCritic
 					stats.Losses++;
 				stats.Kills += player.Kills;
 				stats.Deaths += player.Deaths;
+				for (int i = 0; i < player.MultiKills.Length; i++)
+					stats.MultiKills[i] += player.MultiKills[i];
 				stats.RoundsWon += (isOnTeam1 ? team1 : team2).Score;
 				stats.RoundsLost += (isOnTeam1 ? team2 : team1).Score;
 			}

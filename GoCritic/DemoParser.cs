@@ -42,7 +42,7 @@ namespace GoCritic
 				return;
 			var killerStats = GetPlayerStats(arguments.Killer);
 			var victimStats = GetPlayerStats(arguments.Victim);
-			killerStats.Kills++;
+			killerStats.OnRoundKill();
 			victimStats.Deaths++;
 		}
 
@@ -64,6 +64,8 @@ namespace GoCritic
 				return;
 			var team = GetTeam(arguments.Winner);
 			team.Score++;
+			foreach (var player in _Match.Teams.SelectMany(t => t.Players))
+				player.OnRoundEnd();
 		}
 
 		#endregion
@@ -98,7 +100,7 @@ namespace GoCritic
 
 		private void RemoveSpectators()
 		{
-			_Match.Teams = _Match.Teams.Where(t => t.TeamEnum != DemoInfo.Team.Spectate).ToList();
+			_Match.Teams.RemoveAll(t => t.TeamEnum == DemoInfo.Team.Spectate);
 		}
 	}
 }
