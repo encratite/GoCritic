@@ -20,7 +20,9 @@ namespace GoCritic
 				Console.WriteLine("                       to only include games in which you played");
 				Console.WriteLine("                       with those particular players.");
 				Console.WriteLine("                       Requires the 64-bit integer format of the SteamID");
-				Console.WriteLine("                       (e.g. 76xxxxxxxxxxxxxxx).");
+				Console.WriteLine("                       (e.g. 76xxxxxxxxxxxxxxx). Add an exclamation mark");
+				Console.WriteLine("                       in front of the SteamID (e.g. !76xxxxxxxxxxxxxxx)");
+				Console.WriteLine("                       to exclude games with that particular player.");
 				return;
 			}
 			string command = arguments.First();
@@ -32,7 +34,7 @@ namespace GoCritic
 			}
 			else if (command == "stats")
 			{
-				var steamIDs = arguments.Skip(1).Select(steamID => long.Parse(steamID)).ToList();
+				var steamIDs = arguments.Skip(1).ToList();
 				manager.PrintStats(steamIDs);
 			}
 			else

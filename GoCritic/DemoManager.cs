@@ -59,9 +59,9 @@ namespace GoCritic
 				Console.WriteLine($"Parsed {count} new demo(s) in {stopwatch.Elapsed.TotalSeconds:F1} s");
 		}
 
-		public void PrintStats(List<long> steamIDs)
+		public void PrintStats(List<string> steamIDFilters)
 		{
-			var mapStats = GetMapStats(steamIDs);
+			var mapStats = GetMapStats(steamIDFilters);
 			foreach (var map in mapStats)
 			{
 				var originalColor = Console.ForegroundColor;
@@ -113,22 +113,22 @@ namespace GoCritic
 			}
 		}
 
-		private List<MapStats> GetMapStats(List<long> steamIDs)
+		private List<MapStats> GetMapStats(List<string> steamIDFilters)
 		{
 			long steamID = GetSteamID();
 			var mapStats = new List<MapStats>();
 			var allMaps = new MapStats("[All maps]");
 			foreach (var match in _Matches)
 			{
-				ProcessMatch(match, steamID, steamIDs, mapStats);
-				ProcessMatch(match, steamID, steamIDs, mapStats, allMaps);
+				ProcessMatch(match, steamID, steamIDFilters, mapStats);
+				ProcessMatch(match, steamID, steamIDFilters, mapStats, allMaps);
 			}
 			mapStats = mapStats.OrderByDescending(m => m.Games).ToList();
 			mapStats.Add(allMaps);
 			return mapStats;
 		}
 
-		private void ProcessMatch(Match match, long steamID, List<long> steamIDs, List<MapStats> mapStats, MapStats statsOverride = null)
+		private void ProcessMatch(Match match, long steamID, List<string> steamIDFilters, List<MapStats> mapStats, MapStats statsOverride = null)
 		{
 			if (match.Teams.Count != 2)
 				return;
@@ -140,9 +140,17 @@ namespace GoCritic
 			bool isOnTeam1 = team1.Players.Contains(player);
 			var playerTeam = isOnTeam1 ? team1 : team2;
 			var enemyTeam = isOnTeam1 ? team2 : team1;
-			var premadeHashSet = new HashSet<long>(steamIDs);
-			var teamHashSet = new HashSet<long>(playerTeam.Players.Select(p => p.SteamID));
-			if (!premadeHashSet.IsSubsetOf(teamHashSet))
+			var inclusiveSet = new HashSet<long>();
+			var exclusiveSet = new HashSet<long>();
+			foreach (string filter in steamIDFilters)
+			{
+				if (filter[0] != '!')
+					inclusiveSet.Add(long.Parse(filter));
+				else
+					exclusiveSet.Add(long.Parse(filter.Substring(1)));
+			}
+			var teamSet = new HashSet<long>(playerTeam.Players.Select(p => p.SteamID));
+			if (!inclusiveSet.IsSubsetOf(teamSet) || exclusiveSet.Intersect(teamSet).Any())
 				return;
 			var stats = statsOverride ?? mapStats.FirstOrDefault(s => s.Map == match.Map);
 			if (stats == null)
