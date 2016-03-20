@@ -57,8 +57,30 @@ namespace GoCritic
             stopwatch.Stop();
 			if (count > 0)
 				Console.WriteLine($"Parsed {count} new demo(s) in {stopwatch.Elapsed.TotalSeconds:F1} s");
-			else
-				Console.WriteLine("Detected no new demos");
+		}
+
+		public void PrintStats()
+		{
+			var mapStats = GetMapStats();
+			foreach (var map in mapStats)
+			{
+				var originalColor = Console.ForegroundColor;
+				Console.ForegroundColor = ConsoleColor.White;
+				Console.WriteLine(map.Name);
+				Console.ForegroundColor = originalColor;
+				Console.Write($"W/D/L: {map.Wins}/{map.Draws}/{map.Losses} (");
+				int difference = map.Wins - map.Losses;
+				if (difference > 0)
+					Console.ForegroundColor = ConsoleColor.Green;
+				else if (difference < 0)
+					Console.ForegroundColor = ConsoleColor.Red;
+				else
+					Console.ForegroundColor = originalColor;
+				Console.Write(difference.ToString("+#;-#;0"));
+                Console.ForegroundColor = originalColor;
+				Console.WriteLine(")");
+				Console.WriteLine($"Round averages: {map.KillsPerRound:F2} kills, {map.DeathsPerRound:F2} deaths");
+            }
 		}
 
 		private long GetSteamId()
@@ -89,6 +111,44 @@ namespace GoCritic
 					return value;
 				}
 			}
+		}
+
+		private List<MapStats> GetMapStats()
+		{
+			long steamId = GetSteamId();
+			var mapStats = new List<MapStats>();
+			foreach (var match in _Matches)
+			{
+				if (match.Teams.Count != 2)
+					continue;
+				var player = match.Teams.SelectMany(t => t.Players).FirstOrDefault(p => p.SteamId == steamId);
+				if (player == null)
+					continue;
+				var stats = mapStats.FirstOrDefault(s => s.Name == match.Map);
+				if (stats == null)
+				{
+					stats = new MapStats(match.Map);
+					mapStats.Add(stats);
+				}
+				var team1 = match.Teams[0];
+				var team2 = match.Teams[1];
+				bool isOnTeam1 = team1.Players.Contains(player);
+				if (team1.Score == team2.Score)
+					stats.Draws++;
+				else if (
+					team1.Score > team2.Score && isOnTeam1 ||
+					team2.Score > team1.Score && !isOnTeam1
+				)
+					stats.Wins++;
+				else
+					stats.Losses++;
+				stats.Kills += player.Kills;
+				stats.Deaths += player.Deaths;
+				stats.RoundsWon += (isOnTeam1 ? team1 : team2).Score;
+				stats.RoundsLost += (isOnTeam1 ? team2 : team1).Score;
+			}
+			mapStats = mapStats.OrderByDescending(m => m.Games).ToList();
+			return mapStats;
 		}
 	}
 }

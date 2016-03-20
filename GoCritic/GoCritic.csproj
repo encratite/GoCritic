@@ -50,7 +50,7 @@
     <Compile Include="DemoParser.cs" />
     <Compile Include="MapStats.cs" />
     <Compile Include="Match.cs" />
-    <Compile Include="PlayerMatchStats.cs" />
+    <Compile Include="PlayerStats.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Team.cs" />
   </ItemGroup>

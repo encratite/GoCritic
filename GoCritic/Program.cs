@@ -7,6 +7,7 @@
 			var manager = new DemoManager();
 			manager.LoadCache();
 			manager.ParseDemos();
+			manager.PrintStats();
 		}
 	}
 }

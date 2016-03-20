@@ -68,7 +68,7 @@ namespace GoCritic
 
 		#endregion
 
-		private PlayerMatchStats GetPlayerStats(Player player)
+		private PlayerStats GetPlayerStats(Player player)
 		{
 			var stats = _Match.Teams.SelectMany(t => t.Players).FirstOrDefault(s => s.SteamId == player.SteamID);
 			if (stats == null)
@@ -88,10 +88,10 @@ namespace GoCritic
 			return output;
 		}
 
-		private PlayerMatchStats AddPlayer(Player player, DemoInfo.Team teamEnum)
+		private PlayerStats AddPlayer(Player player, DemoInfo.Team teamEnum)
 		{
 			var team = GetTeam(teamEnum);
-			var stats = new PlayerMatchStats(player);
+			var stats = new PlayerStats(player);
 			team.Players.Add(stats);
 			return stats;
 		}

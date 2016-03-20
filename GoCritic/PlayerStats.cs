@@ -2,7 +2,7 @@
 
 namespace GoCritic
 {
-	class PlayerMatchStats
+	class PlayerStats
 	{
 		public string Name { get; set; }
 		public long SteamId { get; set; }
@@ -10,11 +10,11 @@ namespace GoCritic
 		public int Kills { get; set; } = 0;
 		public int Deaths { get; set; } = 0;
 
-		public PlayerMatchStats()
+		public PlayerStats()
 		{
 		}
 
-		public PlayerMatchStats(Player player)
+		public PlayerStats(Player player)
 		{
 			Name = player.Name;
 			SteamId = player.SteamID;
