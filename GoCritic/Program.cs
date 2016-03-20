@@ -10,11 +10,13 @@ namespace GoCritic
 		{
 			if (arguments.Length == 0)
 			{
+				Console.WriteLine("This is a CS:GO demo analysis tool to figure out your strongest maps");
+				Console.WriteLine("and what premades you perform the best with.");
+				Console.WriteLine(string.Empty);
 				Console.WriteLine("Commands supported:");
 				Console.WriteLine(string.Empty);
-				Console.WriteLine("  update               Update demo cache. May take a couple of minutes.");
-				Console.WriteLine("                       You must run this command the first time you use");
-				Console.WriteLine("                       this tool.");
+				Console.WriteLine("  update               Update the demo cache. This may take several minutes.");
+				Console.WriteLine("                       Run this command the first time you use this tool.");
 				Console.WriteLine(string.Empty);
 				Console.WriteLine("  stats [SteamIDs]     Print map statistics. Specify additional SteamIDs");
 				Console.WriteLine("                       to only include games in which you played");
