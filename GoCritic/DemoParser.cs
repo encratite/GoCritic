@@ -1,0 +1,103 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using DemoInfo;
+
+namespace GoCritic
+{
+	class DemoParser
+	{
+		private Match _Match = new Match();
+
+		private bool _MatchStarted = false;
+
+		public Match Parse(FileInfo fileInfo)
+		{
+			_Match.DemoName = fileInfo.Name;
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open))
+			{
+				var parser = new DemoInfo.DemoParser(stream);
+				parser.MatchStarted += OnMatchStarted;
+				parser.PlayerKilled += OnPlayerKilled;
+				parser.PlayerTeam += OnPlayerTeam;
+				parser.RoundEnd += OnRoundEnd;
+				parser.ParseHeader();
+				_Match.Map = parser.Map;
+				parser.ParseToEnd();
+				RemoveSpectators();
+			}
+			return _Match;
+		}
+
+		#region Event handlers
+
+		private void OnMatchStarted(object sender, MatchStartedEventArgs arguments)
+		{
+			_MatchStarted = true;
+		}
+
+		private void OnPlayerKilled(object sender, PlayerKilledEventArgs arguments)
+		{
+			if (!_MatchStarted || arguments.Killer == null || arguments.Victim == null)
+				return;
+			var killerStats = GetPlayerStats(arguments.Killer);
+			var victimStats = GetPlayerStats(arguments.Victim);
+			killerStats.Kills++;
+			victimStats.Deaths++;
+		}
+
+		private void OnPlayerTeam(object sender, PlayerTeamEventArgs arguments)
+		{
+			var player = arguments.Swapped;
+			if (player == null)
+				return;
+			AddPlayer(player, arguments.NewTeam);
+		}
+
+		private void OnRoundEnd(object sender, RoundEndedEventArgs arguments)
+		{
+			if (arguments.Reason == RoundEndReason.GameStart)
+				return;
+			var team = GetTeam(arguments.Winner);
+			team.Score++;
+			// Console.WriteLine($"{arguments.Message} ({arguments.Reason}): {team.Score}");
+		}
+
+		#endregion
+
+		private PlayerMatchStats GetPlayerStats(Player player)
+		{
+			var stats = _Match.Teams.SelectMany(t => t.Players).FirstOrDefault(s => s.SteamId == player.SteamID);
+			if (stats == null)
+				stats = AddPlayer(player, player.Team);
+			return stats;
+		}
+
+		private Team GetTeam(DemoInfo.Team team)
+		{
+			var teams = _Match.Teams;
+			var output = teams.FirstOrDefault(t => t.TeamEnum == team);
+			if (output == null)
+			{
+				output = new Team { TeamEnum = team };
+				teams.Add(output);
+			}
+			return output;
+		}
+
+		private PlayerMatchStats AddPlayer(Player player, DemoInfo.Team teamEnum)
+		{
+			foreach (var currentTeam in _Match.Teams)
+				currentTeam.Players = currentTeam.Players.Where(p => p.SteamId != player.SteamID).ToList();
+			var team = GetTeam(teamEnum);
+			var stats = new PlayerMatchStats(player);
+			team.Players.Add(stats);
+			return stats;
+		}
+
+		private void RemoveSpectators()
+		{
+			_Match.Teams = _Match.Teams.Where(t => t.TeamEnum != DemoInfo.Team.Spectate).ToList();
+		}
+	}
+}

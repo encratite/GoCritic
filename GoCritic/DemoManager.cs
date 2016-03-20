@@ -11,7 +11,6 @@ namespace GoCritic
 	class DemoManager
 	{
 		private const string CacheFile = "Cache.json";
-		private const string CacheBackupFile = "CacheBackup.json";
 
 		private List<Match> _Matches = new List<Match>();
 
@@ -50,8 +49,8 @@ namespace GoCritic
 				if (_Matches.Any(m => m.DemoName == file.Name))
 					continue;
 				Console.WriteLine($"Parsing demo {file.Name}");
-				var match = new Match();
-				match.Parse(file);
+				var parser = new DemoParser();
+				var match = parser.Parse(file);
 				_Matches.Add(match);
 				SaveCache();
 				count++;
@@ -63,17 +62,32 @@ namespace GoCritic
 				Console.WriteLine("Detected no new demos");
 		}
 
+		private long GetSteamId()
+		{
+			string name = GetRegistryString("LastGameNameUsed");
+			var player = _Matches.SelectMany(m => m.Teams).SelectMany(t => t.Players).FirstOrDefault(p => p.Name == name);
+			if (player == null)
+				throw new ApplicationException("Unable to find any demos with your current player name.");
+			return player.SteamId;
+		}
+
 		private string GetDemoPath()
+		{
+			string steamPath = GetRegistryString("SteamPath");
+			string demoPath = Path.Combine(steamPath, @"SteamApps\common\Counter-Strike Global Offensive\csgo\replays");
+			return demoPath;
+		}
+
+		private string GetRegistryString(string name)
 		{
 			using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32))
 			{
 				using (var key = baseKey.OpenSubKey(@"Software\Valve\Steam"))
 				{
-					string steamPath = key.GetValue("SteamPath") as string;
-					if (steamPath == null)
-						throw new ApplicationException("Unable to find Steam installation.");
-					string demoPath = Path.Combine(steamPath, @"SteamApps\common\Counter-Strike Global Offensive\csgo\replays");
-					return demoPath;
+					string value = key.GetValue(name) as string;
+					if (value == null)
+						throw new ApplicationException("Unable to read registry.");
+					return value;
 				}
 			}
 		}
