@@ -7,7 +7,7 @@ namespace GoCritic
 		public const int PlayersPerTeam = 5;
 
 		public string Name { get; set; }
-		public long SteamId { get; set; }
+		public long SteamID { get; set; }
 
 		public int Kills { get; set; } = 0;
 		public int Deaths { get; set; } = 0;
@@ -23,7 +23,7 @@ namespace GoCritic
 		public PlayerStats(Player player)
 		{
 			Name = player.Name;
-			SteamId = player.SteamID;
+			SteamID = player.SteamID;
 		}
 
 		public void OnRoundEnd()

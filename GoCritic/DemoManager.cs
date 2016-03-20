@@ -59,9 +59,9 @@ namespace GoCritic
 				Console.WriteLine($"Parsed {count} new demo(s) in {stopwatch.Elapsed.TotalSeconds:F1} s");
 		}
 
-		public void PrintStats()
+		public void PrintStats(List<long> steamIDs)
 		{
-			var mapStats = GetMapStats();
+			var mapStats = GetMapStats(steamIDs);
 			foreach (var map in mapStats)
 			{
 				var originalColor = Console.ForegroundColor;
@@ -84,13 +84,13 @@ namespace GoCritic
             }
 		}
 
-		private long GetSteamId()
+		private long GetSteamID()
 		{
 			string name = GetRegistryString("LastGameNameUsed");
 			var player = _Matches.SelectMany(m => m.Teams).SelectMany(t => t.Players).FirstOrDefault(p => p.Name == name);
 			if (player == null)
 				throw new ApplicationException("Unable to find any demos with your current player name.");
-			return player.SteamId;
+			return player.SteamID;
 		}
 
 		private string GetDemoPath()
@@ -114,44 +114,50 @@ namespace GoCritic
 			}
 		}
 
-		private List<MapStats> GetMapStats()
+		private List<MapStats> GetMapStats(List<long> steamIDs)
 		{
-			long steamId = GetSteamId();
+			long steamID = GetSteamID();
 			var mapStats = new List<MapStats>();
 			foreach (var match in _Matches)
-			{
-				if (match.Teams.Count != 2)
-					continue;
-				var player = match.Teams.SelectMany(t => t.Players).FirstOrDefault(p => p.SteamId == steamId);
-				if (player == null)
-					continue;
-				var stats = mapStats.FirstOrDefault(s => s.Map == match.Map);
-				if (stats == null)
-				{
-					stats = new MapStats(match.Map);
-					mapStats.Add(stats);
-				}
-				var team1 = match.Teams[0];
-				var team2 = match.Teams[1];
-				bool isOnTeam1 = team1.Players.Contains(player);
-				if (team1.Score == team2.Score)
-					stats.Draws++;
-				else if (
-					team1.Score > team2.Score && isOnTeam1 ||
-					team2.Score > team1.Score && !isOnTeam1
-				)
-					stats.Wins++;
-				else
-					stats.Losses++;
-				stats.Kills += player.Kills;
-				stats.Deaths += player.Deaths;
-				for (int i = 0; i < player.MultiKills.Length; i++)
-					stats.MultiKills[i] += player.MultiKills[i];
-				stats.RoundsWon += (isOnTeam1 ? team1 : team2).Score;
-				stats.RoundsLost += (isOnTeam1 ? team2 : team1).Score;
-			}
+				ProcessMatch(match, steamID, steamIDs, mapStats);
 			mapStats = mapStats.OrderByDescending(m => m.Games).ToList();
 			return mapStats;
+		}
+
+		private void ProcessMatch(Match match, long steamID, List<long> steamIDs, List<MapStats> mapStats)
+		{
+			if (match.Teams.Count != 2)
+				return;
+			var player = match.Teams.SelectMany(t => t.Players).FirstOrDefault(p => p.SteamID == steamID);
+			if (player == null)
+				return;
+			var team1 = match.Teams[0];
+			var team2 = match.Teams[1];
+			bool isOnTeam1 = team1.Players.Contains(player);
+			var playerTeam = isOnTeam1 ? team1 : team2;
+			var enemyTeam = isOnTeam1 ? team2 : team1;
+			var premadeHashSet = new HashSet<long>(steamIDs);
+			var teamHashSet = new HashSet<long>(playerTeam.Players.Select(p => p.SteamID));
+			if (!premadeHashSet.IsSubsetOf(teamHashSet))
+				return;
+			var stats = mapStats.FirstOrDefault(s => s.Map == match.Map);
+			if (stats == null)
+			{
+				stats = new MapStats(match.Map);
+				mapStats.Add(stats);
+			}
+			if (playerTeam.Score > enemyTeam.Score)
+				stats.Wins++;
+			else if (playerTeam.Score < enemyTeam.Score)
+				stats.Losses++;
+			else
+				stats.Draws++;
+			stats.Kills += player.Kills;
+			stats.Deaths += player.Deaths;
+			for (int i = 0; i < player.MultiKills.Length; i++)
+				stats.MultiKills[i] += player.MultiKills[i];
+			stats.RoundsWon += playerTeam.Score;
+			stats.RoundsLost += enemyTeam.Score;
 		}
 	}
 }

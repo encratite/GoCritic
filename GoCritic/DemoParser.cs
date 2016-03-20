@@ -72,7 +72,7 @@ namespace GoCritic
 
 		private PlayerStats GetPlayerStats(Player player)
 		{
-			var stats = _Match.Teams.SelectMany(t => t.Players).FirstOrDefault(s => s.SteamId == player.SteamID);
+			var stats = _Match.Teams.SelectMany(t => t.Players).FirstOrDefault(s => s.SteamID == player.SteamID);
 			if (stats == null)
 				stats = AddPlayer(player, player.Team);
 			return stats;
